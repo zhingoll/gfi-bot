@@ -108,8 +108,8 @@ default_gfi_threshold = 0.5  # default min confidence level for an issue to be c
 default_newcomer_threshold = 5  # default max # of commits for newcomers
 
 [mongodb]
-url = "mongodb://localhost:27020"
-db = "gfibot"
+url = "mongodb://localhost:27017"
+db = "GFI"
 
 [mongodb_dev]
 url = "mongodb://localhost:27021"
