@@ -31,12 +31,16 @@ class GitHubFetchLog(Log):
     updated_issues: int = IntField(null=True)
     updated_open_issues: int = IntField(null=True)
     updated_resolved_issues: int = IntField(null=True)
+    updated_open_prs: int = IntField(null=True)
+    updated_closed_prs: int = IntField(null=True)
     updated_users: int = IntField(null=True)
 
     rate: int = IntField(null=True)
     rate_repo_stat: int = IntField(null=True)
     rate_resolved_issue: int = IntField(null=True)
     rate_open_issue: int = IntField(null=True)
+    rate_closed_pr: int = IntField(null=True)
+    rate_open_pr: int = IntField(null=True)
     rate_user: int = IntField(null=True)
 
 

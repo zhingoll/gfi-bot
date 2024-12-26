@@ -36,6 +36,24 @@ class Prediction(Document):
         ]
     }
 
+class IssueAssign(Document):
+
+    owner: str = StringField(required=True)
+    name: str = StringField(required=True)
+    number: int = IntField(required=True)
+
+    probability: List[float] = ListField(FloatField(required=True))
+    last_updated: datetime = DateTimeField(required=True)
+    assignee: List[str] = ListField(StringField(required=True))
+
+
+    meta = {
+        "indexes": [
+            {"fields": ["owner", "name", "number"], "unique": True},
+            {"fields": ["probability"]},
+            {"fields": ["assignee"]}
+        ]
+    }
 
 class TrainingSummary(Document):
     """

@@ -149,6 +149,23 @@ class Dataset(Document):
         ]
     }
 
+class IssueContent(Document):
+    """
+        title: Issue title
+        body: Issue description
+    """
+
+    owner: str = StringField(required=True)
+    name: str = StringField(required=True)
+    number: int = IntField(required=True)
+    title: str = StringField(required=True)
+    body: str = StringField(required=True)
+
+    meta = {
+        "indexes": [
+            {"fields": ["owner", "name", "number"], "unique": True},
+        ]
+    }
 
 class IssueEvent(DynamicEmbeddedDocument):
     """
@@ -176,12 +193,17 @@ class IssueEvent(DynamicEmbeddedDocument):
     time: datetime = DateTimeField(null=True)
     actor: str = StringField(null=True)
     comment: str = StringField(null=True)
-    commenter: str = StringField(null=True)
+    commenter: str = StringField(null=True)  # 这个字段在comment事件的情况下，和actor是重复的，可以去除
     label: str = StringField(null=True)
     assignee: str = StringField(null=True)
     source: int = IntField(null=True)
     commit: str = StringField(null=True)
 
+class PREvent(DynamicEmbeddedDocument):
+    type: str = StringField(required=True)
+    time: datetime = DateTimeField(null=True)
+    actor: str = StringField(null=True)
+    comment: str = StringField(null=True)
 
 class ResolvedIssue(Document):
     """
@@ -193,19 +215,21 @@ class ResolvedIssue(Document):
     name: str = StringField(required=True)
     number: int = IntField(required=True)
 
+
     created_at: datetime = DateTimeField(required=True)
     resolved_at: datetime = DateTimeField(required=True)
-    resolver: str = StringField(required=True)  # Issue resolver's GitHub user name
+    resolver: List[str] = ListField(StringField(required=True))  # Issue resolver's GitHub user name
     # If int, the PR number that resolved this issue.
     # If string, the commit hash that resolved this issue
-    resolved_in: Union[int, str] = DynamicField(required=True)
+    # resolved_in: Union[int, str] = DynamicField(required=True)  # 暂时去掉，目前仅依靠assign、pr和comment去判断resolver
     # Issue resolver's commits to this repo, before the issue is resolved
-    resolver_commit_num: int = IntField(required=True)
+    # resolver_commit_num: int = IntField(required=True)  # 暂时去掉，目前仅考虑交互信息
 
     events: List[IssueEvent] = ListField(EmbeddedDocumentField(IssueEvent))
 
-    meta = {"indexes": [{"fields": ["owner", "name", "number"], "unique": True}]}
+    issue_opener: str = StringField(required=True)
 
+    meta = {"indexes": [{"fields": ["owner", "name", "number"], "unique": True}]}
 
 class OpenIssue(Document):
     """
@@ -219,8 +243,58 @@ class OpenIssue(Document):
     created_at: datetime = DateTimeField(required=True)
     updated_at: datetime = DateTimeField(required=True)
     events: List[IssueEvent] = ListField(EmbeddedDocumentField(IssueEvent))
+    issue_opener: str = StringField(required=True)
     meta = {"indexes": [{"fields": ["owner", "name", "number"], "unique": True}]}
 
+class IssueEventSupplement(Document):
+
+    owner: str = StringField(required=True)
+    name: str = StringField(required=True)
+    number: int = IntField(required=True)
+    events: List[IssueEvent] = ListField(EmbeddedDocumentField(IssueEvent))
+    part: int = IntField(required=True)
+
+    meta = {"indexes": [{"fields": ["owner", "name", "number","part"], "unique": True}]}
+
+class ClosedPr(Document):
+    """
+    Additional issue information for issue that are resolved by a developer.
+    These issues will be used as the training dataset for RecGFI training.
+    """
+
+    owner: str = StringField(required=True)
+    name: str = StringField(required=True)
+    number: int = IntField(required=True)
+    created_at: datetime = DateTimeField(required=True)
+    closed_at: datetime = DateTimeField(required=True)
+
+    reviewer_events: List[PREvent] = ListField(EmbeddedDocumentField(PREvent))
+    normal_commenter_events: List[PREvent] = ListField(EmbeddedDocumentField(PREvent))
+    label_events: List[PREvent] = ListField(EmbeddedDocumentField(PREvent))
+
+    pr_opener: str = StringField(required=True)
+
+    meta = {"indexes": [{"fields": ["owner", "name", "number"], "unique": True}]}
+
+
+class OpenPr(Document):
+    """
+    Additional issue information for currently open issues.
+    These issues will be used as the testing dataset for RecGFI training.
+    """
+
+    owner: str = StringField(required=True)
+    name: str = StringField(required=True)
+    number: int = IntField(required=True)
+    created_at: datetime = DateTimeField(required=True)
+    updated_at: datetime = DateTimeField(required=True)
+
+    reviewer_events: List[PREvent] = ListField(EmbeddedDocumentField(PREvent))
+    normal_commenter_events: List[PREvent] = ListField(EmbeddedDocumentField(PREvent))
+    label_events: List[PREvent] = ListField(EmbeddedDocumentField(PREvent))
+
+    pr_opener: str = StringField(required=True)
+    meta = {"indexes": [{"fields": ["owner", "name", "number"], "unique": True}]}
 
 class Repo(Document):
     """
